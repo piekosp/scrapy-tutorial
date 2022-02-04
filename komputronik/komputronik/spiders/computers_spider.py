@@ -1,27 +1,21 @@
-import scrapy
-import csv
-
 from scrapy.loader import ItemLoader
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
 from komputronik.items import KomputronikItem
 
 
-class ComputersSpider(scrapy.Spider):
+class ComputersSpider(CrawlSpider):
     name = "computers"
+    start_urls = ["https://www.komputronik.pl/search-filter/5801/komputery-do-gier"]
 
-    def start_requests(self):
-        urls = [
-            "https://www.komputronik.pl/product/732807/komputronik-infinity-x500-ax4-.html",
-            "https://www.komputronik.pl/product/726452/komputronik-infinity-x510-a1-.html",
-            "https://www.komputronik.pl/product/742511/komputronik-infinity-x510-m2-.html",
-            "https://www.komputronik.pl/product/726453/komputronik-infinity-x510-a2-.html",
-        ]
-        for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+    rules = (Rule(LinkExtractor(allow=("product")), callback="parse_item"),)
 
-    def parse(self, response):
+    def parse_item(self, response):
         loader = ItemLoader(item=KomputronikItem(), response=response)
+        loader.add_value("category_url", self.start_urls[0])
+        loader.add_value("link", response.url)
         loader.add_css("computer_name", "h1::text")
-        graphic_card_xpath = '//tr[th/text()="Karta graficzna"]/td/text()'
+        graphic_card_xpath = '//tr[th/text()="Karta graficzna"]/td'
         loader.add_xpath("graphic_card", graphic_card_xpath)
         price_xpath = '//span[contains(@class, "proper")]/text()'
         loader.add_xpath("price", price_xpath)
