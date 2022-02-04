@@ -1,5 +1,5 @@
 from scrapy.loader import ItemLoader
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import CrawlSpider, Rule, Spider
 from scrapy.linkextractors import LinkExtractor
 from komputronik.items import KomputronikItem
 
@@ -12,7 +12,7 @@ class ComputersSpider(CrawlSpider):
 
     def parse_item(self, response):
         loader = ItemLoader(item=KomputronikItem(), response=response)
-        loader.add_value("category_url", self.start_urls[0])
+        loader.add_value("category_url", response.request.headers.get("Referer"))
         loader.add_value("link", response.url)
         loader.add_css("computer_name", "h1::text")
         graphic_card_xpath = '//tr[th/text()="Karta graficzna"]/td'
