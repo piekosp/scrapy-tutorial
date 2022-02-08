@@ -19,6 +19,5 @@ class KomputronikPipeline:
         self.file.close()
 
     def process_item(self, item, spider):
-        print(ItemAdapter(item).asdict())
         self.writer.writerow(ItemAdapter(item).asdict())
         return item

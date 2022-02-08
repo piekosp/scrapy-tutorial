@@ -6,36 +6,8 @@ from scrapy import Request
 from komputronik.items import ComputerItemLoader, GenericItem
 
 
-class ComputersSpider(CrawlSpider):
-    name = "computers"
-    start_urls = [
-        "https://www.komputronik.pl/search-filter/5801/komputery-do-gier",
-        "https://www.komputronik.pl/search-filter/5022/laptopy-do-gier",
-    ]
-    rules = (
-        Rule(
-            LinkExtractor(allow=("product")),
-            callback="parse_item",
-            process_request="process_request",
-        ),
-    )
-
-    def process_request(self, request, response):
-        request.meta["category_url"] = get_base_url(response)
-        return request
-
-    def parse_item(self, response):
-        loader = ComputerItemLoader(item=GenericItem(), response=response)
-        loader.add_value("category_url", response.meta.get("category_url"))
-        loader.add_value("link", response.url)
-        loader.add_xpath("computer_name", "//h1/text()")
-        loader.add_xpath("graphic_card", '//tr[th/text()="Karta graficzna"]/td')
-        loader.add_xpath("price", '//span[contains(@class, "proper")]/text()')
-        yield loader.load_item()
-
-
-class TestSpider(Spider):
-    name = "c_spider"
+class ComputerSpider(Spider):
+    name = "computer_spider"
     link_extractor = LinkExtractor(allow=("product"))
 
     def start_requests(self):
@@ -44,8 +16,7 @@ class TestSpider(Spider):
             "https://www.komputronik.pl/search-filter/5801/komputery-do-gier",
         ]
         for url in urls:
-            yield Request(url, callback=self.paginator)
-            yield Request(url, callback=self.extract_items)
+            yield Request(url, callback=self.paginator, meta={"category_url": url})
 
     def paginator(self, response):
         pages = int(
@@ -53,13 +24,12 @@ class TestSpider(Spider):
                 '//div[contains(@class, "pagination")]/ul/li[last()-1]/a/text()'
             ).get()
         )
-        print(pages)
-        for i in range(2, pages + 1):
-            url = response.request.url + f"?p={i}"
-            print(url)
-            yield Request(
-                url, callback=self.extract_items, meta=dict(category_url=response.url)
-            )
+        base_url = response.request.url
+        for i in range(1, pages + 1):
+            if i == 1:
+                yield Request(base_url, callback=self.extract_items, dont_filter=True)
+            url = base_url + f"?p={i}"
+            yield Request(url, callback=self.extract_items)
 
     def extract_items(self, response):
         for link in self.link_extractor.extract_links(response):
@@ -67,7 +37,7 @@ class TestSpider(Spider):
 
     def parse_item(self, response):
         loader = ComputerItemLoader(item=GenericItem(), response=response)
-        loader.add_value("category_url", response.meta.get("category_url"))
+        loader.add_value("category_url", response.meta["category_url"])
         loader.add_value("link", response.url)
         loader.add_xpath("computer_name", "//h1/text()")
         loader.add_xpath("graphic_card", '//tr[th/text()="Karta graficzna"]/td')

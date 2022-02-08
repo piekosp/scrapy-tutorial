@@ -3,6 +3,8 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+from unicodedata import category
+from scrapy import Request
 from scrapy import signals
 
 # useful for handling different item types with a single interface
@@ -13,6 +15,7 @@ class KomputronikSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
     # passed objects.
+    category_url = {}
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -22,19 +25,14 @@ class KomputronikSpiderMiddleware:
         return s
 
     def process_spider_input(self, response, spider):
-        # Called for each response that goes through the spider
-        # middleware and into the spider.
 
-        # Should return None or raise an exception.
         return None
 
     def process_spider_output(self, response, result, spider):
-        # Called with the results returned from the Spider, after
-        # it has processed the response.
-
-        # Must return an iterable of Request, or item objects.
-        for i in result:
-            yield i
+        for r in result:
+            if isinstance(r, Request):
+                r.meta["category_url"] = response.meta["category_url"]
+            yield r
 
     def process_spider_exception(self, response, exception, spider):
         # Called when a spider or process_spider_input() method
@@ -53,7 +51,7 @@ class KomputronikSpiderMiddleware:
             yield r
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
+        spider.logger.info("Spider opened: %s" % spider.name)
 
 
 class KomputronikDownloaderMiddleware:
@@ -100,4 +98,4 @@ class KomputronikDownloaderMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
+        spider.logger.info("Spider opened: %s" % spider.name)
